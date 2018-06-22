@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculator | Vue</title>
+  <style>
+    section.main{width:245px;height:305px;background-color:#001938;border:5px solid #001938;border-radius:10px}header.viewer{border-radius:5px;display:flex}header.viewer input.btn{width:100px;padding:0;border:0}div.keypad{padding:5px 2px}input.btn{width:60px;height:60px}input{outline:0;padding:0}input.viewer{background-color:#fff;width:96%;margin:0;border:0;text-align:right;padding-right:4%}input.container{font-size:20px}input.result{font-size:30px}div.viewer{width:100%}input.btn{border:none;margin:0;text-decoration:none;background-color:#001f44;color:#fff;font-family:sans-serif;line-height:1;cursor:pointer;text-align:center;transition:background 250ms ease-in-out,transform 150ms ease;-webkit-appearance:none;-moz-appearance:none;font-size:25px}input.btn:focus,input.btn:hover{outline-offset:-4px;background-color:#001229}input.btn:active{transform:scale(.99)}
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script type="text/javascript">
+    // Button
+    Vue.component('CalculatorButton', {
+      props: ['value'],
+      template: `
+        <input
+          type="button"
+          class="btn"
+          @click="handleClick"
+          :value="value"
+        >
+      `,
+      methods: {
+        handleClick (event) {
+          this.$emit('clickOnButton', event.target.value)
+        }
+      }
+    })
+
+    // Viewer
+    Vue.component('CalculatorViewer', {
+      props: ['container', 'result'],
+      template: `
+        <header class="viewer">
+          <calculator-button
+            value="C"
+            @clickOnButton="handleCleaner"
+          >
+          </calculator-button>
+          <div class="viewer">
+              <input
+              disabled
+              class="viewer container"
+              :value="container"
+            />
+            <input
+              disabled
+              class="viewer result"
+              :value="result"
+            />
+          </div>
+        </header>
+      `,
+      methods: {
+        handleCleaner () {
+          this.$emit('clean')
+        }
+      }
+    })
+
+    // Keypad
+    Vue.component('CalculatorKeypad', {
+      props: ['buttons'],
+      template: `
+        <div class="keypad">
+          <calculator-button
+            :key="i"
+            v-for="(button, i) in buttons"
+            :value="button"
+            @clickOnButton="handleClick"
+          >
+          </calculator-button>
+        </div>
+      `,
+      methods: {
+        handleClick (value) {
+          this.$emit('operate', value)
+        }
+      }
+    })
+
+    // Main
+    const App = Vue.component('app', {
+      data () {
+        return {
+          buttons: [7, 8, 9, '/', 4, 5, 6, '*', 1, 2, 3, '-', 0, '.', '+', '='],
+          container: 0,
+          usedDecimal: false,
+          operation: 0,
+          result: 0
+        }
+      },
+      template: `
+        <section class="main">
+          <calculator-viewer
+            :container="container"
+            :result="result"
+            @clean="cleanContainer"
+          >
+          </calculator-viewer>
+          <calculator-keypad
+            :buttons="buttons"
+            @operate="handleOperate"
+          >
+          </calculator-keypad>
+        </section>
+      `,
+      methods: {
+        addition (value) {
+          this.container = Number(this.container)
+          this.operation = value
+
+          this.result += this.container
+
+          this.container = 0
+          this.usedDecimal = false
+        },
+        subtraction (value) {
+          this.container = Number(this.container)
+          this.operation = value
+
+          this.result -= this.container
+
+          this.container = 0
+          this.usedDecimal = false
+        },
+        multiplication (value) {
+          this.container = Number(this.container)
+          this.operation = value
+          
+          if (this.container === 0) return
+          if (this.result === 0) {
+            this.result = this.container
+          } else {
+            this.result *= this.container
+          }
+
+          this.container = 0
+          this.usedDecimal = false
+        },
+        division (value) {
+          this.container = Number(this.container)
+          this.operation = value
+          
+          if (this.container === 0) return
+          if (this.result === 0) {
+            this.result = this.container
+          } else {
+            this.result /= this.container
+          }
+
+          this.container = 0
+          this.usedDecimal = false
+        },
+        addDecimal (value) {
+          if (this.usedDecimal) return
+
+          this.usedDecimal = true
+          this.container = this.container += value
+        },
+        printResult () {
+          if (this.operation === 'number') return
+
+          if (this.operation === 0 && this.container !== 0) {
+            this.result = this.container
+          } else {
+            this.handleOperate(this.operation)
+          }
+
+          this.container = 0
+          this.usedDecimal = false
+          this.operation = 'number'
+        },
+        handleOperate (value) {
+          switch (value) {
+            case '+':
+              this.addition(value)
+              break
+            case '-':
+              this.subtraction(value)
+              break
+            case '*':
+              this.multiplication(value)
+              break
+            case '/':
+              this.division(value)
+              break
+            case '.':
+              this.addDecimal(value)
+              break
+            case '=':
+              this.printResult()
+              break
+            default:
+              (this.container === 0) ? this.container = value : this.container += value
+          }
+        },
+        cleanContainer () {
+          this.container = 0
+          this.usedDecimal = false
+          this.result = 0
+          this.operation = 0
+        }
+      }
+    })
+
+    // Render
+    new Vue({
+      el: '#app',
+      render: h => h(App)
+    })
+  </script>
+</body>
+</html>
